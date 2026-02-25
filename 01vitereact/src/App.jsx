@@ -1,7 +1,12 @@
+import Chai from './chai.jsx'
+
 
 function App() {
   return (
-   <h1>Hello Manan</h1>
+    <> 
+   <Chai />
+   <p> namaste zi namaste mwah mwah</p>
+   </>
   )
 }
 
