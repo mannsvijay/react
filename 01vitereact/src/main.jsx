@@ -25,7 +25,7 @@ const anotherElement = (
 
 const reactELement = React.createElement(
   'a',
-  {href : 'https://www.google.com/' , target : '_blank'},
+  {href : 'https://www.google.com/' , target : '_blank'}, // attribute
   'Click to visit Google'
 )
 
