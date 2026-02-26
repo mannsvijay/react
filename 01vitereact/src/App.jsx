@@ -5,7 +5,7 @@ function App() {
   return (
     <> 
    <Chai />
-   <p> namaste zi namaste mwah mwah</p>
+   <p> namaste zi namaste mwah mwah </p>
    </>
   )
 }
