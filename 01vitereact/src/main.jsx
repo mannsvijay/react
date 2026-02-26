@@ -5,13 +5,26 @@ import App from './App.jsx'
 function MyApp(){
   return (
     <div>
-      <h1>Custom App </h1>
+      <h1>Custom App || MANAN </h1>
     </div>
   )
 }
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <MyApp />
-  </StrictMode>,
+// const ReactElement = {
+//     type : 'a',
+//     props: {
+//         href : 'https://www.google.com',
+//         target : '_blank'
+//     },
+//     children : "google"
+// } 
+
+const anotherElement = (
+  <a href='https://www.google.com/' target='_blank'>Visit Google</a>
+)
+
+createRoot(document.getElementById('root'))
+.render( 
+    anotherElement
+
 )
