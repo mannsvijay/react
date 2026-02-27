@@ -26,8 +26,9 @@ const resetValue = ()=>{
 }
 
 const makeWeird = ()=>{
-  let  newValue = 69;
-  setCounterValue(newValue);
+  // let  newValue = 67  ;
+  // setCounterValue(newValue);
+  alert("CHAL LAWDE")
 }
 
 
