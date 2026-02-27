@@ -11,9 +11,21 @@ const addValue = ()=>{
   setCounterValue(counter +1);
 }
 
-const subtractValue = ()=>{
+const subtractValue = () =>{
   setCounterValue(counter -1);
 }
+
+const resetValue = ()=>{
+  let  newValue = 0;
+  setCounterValue(newValue);
+}
+
+const makeWeird = ()=>{
+  let  newValue = 69;
+  setCounterValue(newValue);
+}
+
+
 
   return (
     <>
@@ -22,7 +34,11 @@ const subtractValue = ()=>{
       <button onClick={addValue}>Increment</button>
       <br /> <br />
       <button onClick={subtractValue}>Decrement</button>
-      <p> the value of counter is {counter} </p>
+      <br /> <br />
+      <button onClick={resetValue}>Reset</button>
+      <br /> <br />
+      <button onClick={makeWeird}> Make it best Number lmao</button>
+      <p> the value of counter is   {counter} </p>
     </>
   )
 }
