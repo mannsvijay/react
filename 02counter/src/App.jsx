@@ -12,6 +12,11 @@ const addValue = ()=>{
 }
 
 const subtractValue = () =>{
+  if(counter < 1) {
+    let newValue = 0;
+    setCounterValue(newValue);
+    return;
+  }
   setCounterValue(counter -1);
 }
 
