@@ -9,6 +9,12 @@ const [counter,setCounterValue] = useState(5);
   
 const addValue = ()=>{
   setCounterValue(counter +1);
+  // setCounterValue(counter => counter+1);
+  // setCounterValue(counter => counter+1);
+  // setCounterValue(counter => counter+1);
+  // setCounterValue(counter => counter+1);
+
+
 }
 
 const subtractValue = () =>{
