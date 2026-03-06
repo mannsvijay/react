@@ -210,7 +210,7 @@ export default function App() {
 
         {/* Heading */}
         <div className={`block heading${mounted ? ' in' : ''}`} style={{ animationDelay: '0ms' }}>
-          <div className="heading-eyebrow">Secure · v2</div>
+          <div className="heading-eyebrow"> manan vijay </div>
           <div className="heading-title">Password<br />Generator</div>
         </div>
 
