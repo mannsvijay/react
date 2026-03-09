@@ -373,7 +373,7 @@ const CURRENCIES = [
   { code: "SGD", symbol: "S$", flag: "🇸🇬" },
 ];
 
-function InputBox({ label, amount, onAmountChange, currencyValue, onCurrencyChange, amountDisable = false, currencyDisable = false, selectList = [] }) {
+function InputBox({ label, amount, onAmountChange, currencyValue, onCurrencyChange }) {
   const [focused, setFocused] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const inputRef = useRef(null);
