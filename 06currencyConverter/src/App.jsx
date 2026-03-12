@@ -217,7 +217,8 @@ export default function App() {
         <div className="cc__card">
           {/* Header */}
           <div className="cc__header">
-            <p className="cc__eyebrow">Real-time Exchange</p>
+            <p className="cc__eyebrow"> mannsvijay </p>
+            <p className="cc__eyebrow"> Real-time Exchange Rates </p>
             <h1 className="cc__title">Currency <b>Converter</b></h1>
           </div>
 
