@@ -21,8 +21,8 @@ function App() {
         
         {/* Massive Background Typography */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] dark:opacity-[0.08] select-none z-0 overflow-hidden">
-          <h1 className="font-display text-[35vw] leading-none text-center whitespace-nowrap text-[var(--accent)]">
-            
+          <h1 className="font-display text-[20vw] leading-none text-center whitespace-nowrap text-[var(--accent)]">
+            THEME SWITCHER 
           </h1>
         </div>
 

@@ -18,7 +18,7 @@ export default function Card() {
                         Condensed <br/> <span className="text-[var(--accent)]">Variables</span>
                     </h5>
                     <p className="mt-4 text-xs uppercase tracking-[0.15em] font-bold opacity-60">
-                      mannsvijay
+                      Condensed variables reduce the complexity of a system by combining multiple physical parameters into fewer dimensionless forms, making analysis and comparison across different conditions easier.
                     </p>
                 </div>
 
