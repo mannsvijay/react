@@ -34,6 +34,8 @@ useEffect(() => {
 }, [])
 
 
+
+
   return (
     <TodoProvider value = {{todos,addTodo,updatedTodo,deleteTodo,toggleComplete}}>
         <div className="bg-[#172842] min-h-screen py-8">
