@@ -1,7 +1,9 @@
 import React from 'react'
+import { useTodo } from '../context';
 
 function TodoItem({ todo }) {
     
+    const {updatedTodo,deleteTodo,toggleComplete} = useTodo
 
     return (
         <div
@@ -50,4 +52,3 @@ function TodoItem({ todo }) {
 }
 
 export default TodoItem;
-
