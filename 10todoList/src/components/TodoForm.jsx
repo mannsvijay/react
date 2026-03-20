@@ -1,44 +1,156 @@
-import React, { useState } from 'react';
-import { useTodo } from '../context';
-import { motion } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence }  from 'framer-motion';
+import { useTodo }                  from '../context';
 
+/* ─── Config ─── */
+const CATEGORIES = [
+  { id: 'personal', label: 'Personal', icon: '◈' },
+  { id: 'work',     label: 'Work',     icon: '◉' },
+  { id: 'health',   label: 'Health',   icon: '◎' },
+  { id: 'creative', label: 'Creative', icon: '◇' },
+];
+
+const PRIORITIES = [
+  { id: 'low',    label: 'Low',  symbol: '▽' },
+  { id: 'medium', label: 'Med',  symbol: '◆' },
+  { id: 'high',   label: 'High', symbol: '△' },
+];
+
+const expandVariants = {
+  hidden:  { height: 0, opacity: 0  },
+  visible: { height: 'auto', opacity: 1, transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] } },
+  exit:    { height: 0, opacity: 0, transition: { duration: 0.22, ease: [0.65, 0, 0.35, 1] } },
+};
+
+/* ═══════════════════════════════════════════════════════ */
 function TodoForm() {
-    const [todo, setTodo] = useState("");
-    const { addTodo } = useTodo();
+/* ═══════════════════════════════════════════════════════ */
 
-    const add = (e) => {
-        e.preventDefault();
-        if (!todo) return;
-        
-        addTodo({ todo, completed: false, priority: 'medium', category: 'Task' });
-        setTodo("");
-    }
+  const [todo,       setTodo      ] = useState('');
+  const [category,   setCategory  ] = useState('personal');
+  const [priority,   setPriority  ] = useState('medium');
+  const [dueDate,    setDueDate   ] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
 
-    return (
-        <motion.form 
-            onSubmit={add} 
-            className="flex relative group"
-            initial={{ opacity: 0, scale: 0.95, rotateX: -10 }}
-            animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+  const inputRef  = useRef(null);
+  const { addTodo } = useTodo();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!todo.trim()) return;
+
+    addTodo({
+      todo:      todo.trim(),
+      completed: false,
+      category,
+      priority,
+      dueDate:   dueDate || null,
+      subtasks:  [],
+      tags:      [],
+    });
+
+    setTodo('');
+    setDueDate('');
+    setIsExpanded(false);
+    inputRef.current?.focus();
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+
+  /* ══════ render ══════ */
+  return (
+    <form className="todo-form glass-card" onSubmit={handleSubmit} noValidate>
+
+      {/* ── Main input row ── */}
+      <div className="form-main-row">
+        <input
+          ref={inputRef}
+          type="text"
+          className="form-input"
+          placeholder="what needs to be done..."
+          value={todo}
+          onChange={e => setTodo(e.target.value)}
+          onFocus={() => setIsExpanded(true)}
+          aria-label="new todo"
+        />
+
+        <motion.button
+          type="submit"
+          className="form-add-btn"
+          disabled={!todo.trim()}
+          whileTap={{ scale: 0.9 }}
+          aria-label="add todo"
         >
-            <input
-                type="text"
-                placeholder="What's your next move?"
-                className="w-full bg-[#EEEEEE]/5 backdrop-blur-xl border border-[#EEEEEE]/10 rounded-2xl px-6 py-4 outline-none text-[#EEEEEE] placeholder:text-[#EEEEEE]/40 transition-all duration-300 focus:border-[#32E0C4]/50 focus:bg-[#EEEEEE]/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] font-semibold"
-                value={todo}
-                onChange={(e) => setTodo(e.target.value)}
-            />
-            <motion.button 
-                type="submit" 
-                whileHover={{ scale: 1.05, boxShadow: "0px 0px 20px rgba(50, 224, 196, 0.4)" }}
-                whileTap={{ scale: 0.95, y: 2 }}
-                className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-gradient-to-r from-[#0D7377] to-[#32E0C4] text-[#212121] font-bold tracking-widest shrink-0 uppercase"
-            >
-                ADD
-            </motion.button>
-        </motion.form>
-    );
+          +
+        </motion.button>
+      </div>
+
+      {/* ── Expandable options ── */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            className="form-expanded"
+            variants={expandVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <div className="form-options-row">
+
+              {/* Category */}
+              <div className="form-option-group">
+                <span className="form-option-label">category</span>
+                <div className="category-select">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      className={`cat-btn ${category === cat.id ? 'cat-active' : ''}`}
+                      onClick={() => setCategory(cat.id)}
+                    >
+                      {cat.icon} {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div className="form-option-group">
+                <span className="form-option-label">priority</span>
+                <div className="priority-select">
+                  {PRIORITIES.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`pri-btn pri-${p.id} ${priority === p.id ? 'pri-active' : ''}`}
+                      onClick={() => setPriority(p.id)}
+                    >
+                      {p.symbol} {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Due date */}
+              <div className="form-option-group">
+                <span className="form-option-label">due date</span>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={dueDate}
+                  min={today}
+                  onChange={e => setDueDate(e.target.value)}
+                  aria-label="due date"
+                />
+              </div>
+
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </form>
+  );
 }
 
 export default TodoForm;

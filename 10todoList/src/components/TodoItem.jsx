@@ -1,109 +1,337 @@
-import React, { useState } from 'react';
-import { useTodo } from '../context';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useCallback } from 'react';
+import { motion, AnimatePresence }               from 'framer-motion';
+import { useSortable }                           from '@dnd-kit/sortable';
+import { CSS }                                   from '@dnd-kit/utilities';
+import { useTodo }                               from '../context';
 
+/* ─── Lookup tables ─── */
+const CAT_STYLE = {
+  personal: { color: '#32E0C4', label: 'Personal' },
+  work:     { color: '#0D7377', label: 'Work'     },
+  health:   { color: '#5CCFCC', label: 'Health'   },
+  creative: { color: '#3ab8b4', label: 'Creative' },
+};
+
+const PRI_STYLE = {
+  high:   { color: '#32E0C4', symbol: '▲', label: 'HIGH' },
+  medium: { color: '#1aa8ad', symbol: '◆', label: 'MED'  },
+  low: { color: '#1aa8ad', symbol: '◆', label: 'LOW'  },
+
+};
+
+/* ─── Subtask collapse variants ─── */
+const subVariants = {
+  hidden:  { height: 0, opacity: 0 },
+  visible: { height: 'auto', opacity: 1, transition: { duration: 0.30, ease: [0.22, 1, 0.36, 1] } },
+  exit:    { height: 0, opacity: 0, transition: { duration: 0.20, ease: [0.65, 0, 0.35, 1] } },
+};
+
+/* ─── Subtask row variants ─── */
+const subItemVariants = {
+  hidden:  { opacity: 0, x: -10 },
+  visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 260, damping: 22 } },
+  exit:    { opacity: 0, x: 10, transition: { duration: 0.15 } },
+};
+
+
+/* ═══════════════════════════════════════════════════════ */
 function TodoItem({ todo }) {
-    const [isTodoEditable, setIsTodoEditable] = useState(false);
-    const [todoMsg, setTodoMsg] = useState(todo.todo);
-    const { updatedTodo, deleteTodo, toggleComplete } = useTodo();
+/* ═══════════════════════════════════════════════════════ */
 
-    const editTodo = () => {
-        updatedTodo(todo.id, { ...todo, todo: todoMsg });
-        setIsTodoEditable(false);
-    }
+  const [isTodoEditable,  setIsTodoEditable ] = useState(false);
+  const [todoMsg,         setTodoMsg        ] = useState(todo.todo);
+  const [showSubtasks,    setShowSubtasks   ] = useState(false);
+  const [newSubtask,      setNewSubtask     ] = useState('');
 
-    const toggleCompleted = () => toggleComplete(todo.id);
+  const cardRef      = useRef(null);
+  const animFrameRef = useRef(null);
 
-    // Variants for 3D mounting/unmounting
-    const itemVariants = {
-        hidden: { opacity: 0, y: 50, rotateX: -30, scale: 0.9 },
-        visible: { opacity: 1, y: 0, rotateX: 0, scale: 1, transition: { type: "spring", stiffness: 120, damping: 14 } },
-        exit: { opacity: 0, x: -100, rotateX: 45, scale: 0.8, transition: { duration: 0.2 } }
-    };
+  const {
+    updatedTodo,
+    deleteTodo,
+    toggleComplete,
+    addSubtask,
+    toggleSubtask,
+    deleteSubtask,
+  } = useTodo();
 
-    return (
-        <motion.div
-            layout
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            whileHover={{ scale: 1.01, rotateX: 2, rotateY: -1, z: 20 }}
-            className={`group relative flex flex-col sm:flex-row items-start sm:items-center border backdrop-blur-lg rounded-2xl px-5 py-4 gap-4 shadow-2xl transition-all duration-500 overflow-hidden ${
-                todo.completed 
-                ? "bg-[#212121]/40 border-[#EEEEEE]/5 text-[#EEEEEE]/50" 
-                : "bg-[#EEEEEE]/5 border-[#EEEEEE]/10 text-[#EEEEEE]"
-            }`}
-            style={{ transformStyle: 'preserve-3d' }}
-        >
-            {/* Liquid overlay for completion state */}
-            {todo.completed && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#0D7377]/10 to-transparent w-[200%] animate-[shimmer_3s_infinite] pointer-events-none"></div>
-            )}
+  /* ── DnD sortable ── */
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: todo.id });
 
-            {/* Custom Checkbox */}
-            <div className="relative flex items-center justify-center shrink-0 w-6 h-6 z-10">
-                <input
-                    type="checkbox"
-                    className="peer appearance-none w-6 h-6 border-2 border-[#0D7377] rounded-md cursor-pointer checked:bg-[#32E0C4] checked:border-[#32E0C4] transition-all duration-300"
-                    checked={todo.completed}
-                    onChange={toggleCompleted}
-                />
-                <svg className="absolute w-4 h-4 pointer-events-none opacity-0 peer-checked:opacity-100 text-[#212121] transition-opacity duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-            </div>
+  const dndStyle = {
+    transform:  CSS.Transform.toString(transform),
+    transition,
+    zIndex:     isDragging ? 999 : 'auto',
+    opacity:    isDragging ? 0.72 : 1,
+  };
 
-            {/* Content & Metadata */}
-            <div className="flex-grow flex flex-col gap-1 w-full z-10">
-                <input
-                    type="text"
-                    className={`bg-transparent outline-none w-full text-lg transition-all duration-300 font-medium ${
-                        isTodoEditable ? "border-b border-[#32E0C4] text-[#32E0C4]" : "border-b border-transparent"
-                    } ${todo.completed ? "line-through decoration-[#0D7377] decoration-2" : ""}`}
-                    value={todoMsg}
-                    onChange={(e) => setTodoMsg(e.target.value)}
-                    readOnly={!isTodoEditable}
-                    onKeyDown={(e) => { if(e.key === 'Enter') editTodo() }}
-                />
-                
-                {/* Meta Tags (Priority & Category) */}
-                <div className={`flex gap-2 text-xs font-semibold uppercase tracking-wider mt-1 ${todo.completed ? 'opacity-30' : 'opacity-70'}`}>
-                    <span className={`px-2 py-0.5 rounded-md ${todo.priority === 'high' ? 'bg-[#0D7377] text-[#EEEEEE]' : 'bg-[#EEEEEE]/10'}`}>
-                        {todo.priority || 'Medium'}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md border border-[#EEEEEE]/20">
-                        {todo.category || 'Task'}
-                    </span>
-                </div>
-            </div>
+  /* ── 3D tilt ── */
+  const handleMouseMove = useCallback((e) => {
+    if (isTodoEditable || isDragging) return;
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 shrink-0 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <motion.button
-                    whileHover={{ scale: 1.1, backgroundColor: "rgba(238,238,238,0.2)" }}
-                    whileTap={{ scale: 0.9 }}
-                    className="w-10 h-10 rounded-xl flex justify-center items-center bg-[#EEEEEE]/10 border border-[#EEEEEE]/10 disabled:opacity-30 backdrop-blur-md"
-                    onClick={() => {
-                        if (todo.completed) return;
-                        if (isTodoEditable) editTodo();
-                        else setIsTodoEditable((prev) => !prev);
-                    }}
-                    disabled={todo.completed}
+    animFrameRef.current = requestAnimationFrame(() => {
+      const el = cardRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const xRaw = (e.clientX - rect.left)  / rect.width  - 0.5;
+      const yRaw = (e.clientY - rect.top)   / rect.height - 0.5;
+      const x    =  xRaw * 9;
+      const y    = -yRaw * 9;
+      el.style.transform = `perspective(900px) rotateX(${y}deg) rotateY(${x}deg) translateZ(5px)`;
+    });
+  }, [isTodoEditable, isDragging]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.transition = 'transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    el.style.transform  = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+    setTimeout(() => { if (el) el.style.transition = ''; }, 600);
+  }, []);
+
+  /* ── Edit / save ── */
+  const editTodo = () => {
+    if (!todoMsg.trim()) return;
+    updatedTodo(todo.id, { ...todo, todo: todoMsg }); /* BUG FIX: was id: todoMsg */
+    setIsTodoEditable(false);
+  };
+
+  /* ── Subtask form ── */
+  const handleAddSubtask = (e) => {
+    e.preventDefault();
+    if (!newSubtask.trim()) return;
+    addSubtask(todo.id, newSubtask.trim());
+    setNewSubtask('');
+  };
+
+  /* ── Derived values ── */
+  const catStyle     = CAT_STYLE[todo.category] || CAT_STYLE.personal;
+  const priStyle     = PRI_STYLE[todo.priority] || PRI_STYLE.medium;
+  const subtasks     = todo.subtasks || [];
+  const doneSubtasks = subtasks.filter(s => s.completed).length;
+
+  const today   = new Date().toDateString();
+  const isToday = todo.dueDate && new Date(todo.dueDate).toDateString() === today;
+  const isOver  = todo.dueDate && new Date(todo.dueDate) < new Date() && !todo.completed && !isToday;
+
+  const dueFmt = todo.dueDate
+    ? new Date(todo.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    : null;
+
+  /* ══════ render ══════ */
+  return (
+    <div ref={setNodeRef} style={dndStyle}>
+      <div
+        ref={cardRef}
+        className={`todo-card glass-card${todo.completed ? ' todo-completed' : ''}${isDragging ? ' todo-dragging' : ''}`}
+        style={{ '--priority-color': priStyle.color, '--cat-color': catStyle.color }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+
+        {/* Priority accent bar */}
+        <div className="priority-bar" aria-hidden="true" />
+
+        {/* ── Main row ── */}
+        <div className="todo-main">
+
+          {/* Drag handle */}
+          <button
+            className="drag-handle"
+            {...attributes}
+            {...listeners}
+            tabIndex={-1}
+            aria-label="drag to reorder"
+          >
+            ⠿
+          </button>
+
+          {/* Checkbox */}
+          <button
+            className={`todo-check${todo.completed ? ' check-done' : ''}`}
+            onClick={() => toggleComplete(todo.id)}
+            aria-label={todo.completed ? 'mark incomplete' : 'mark complete'}
+          >
+            <motion.div
+              className="check-inner"
+              animate={{ scale: todo.completed ? 1 : 0, opacity: todo.completed ? 1 : 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 20 }}
+            />
+          </button>
+
+          {/* Content */}
+          <div className="todo-content">
+
+            {/* Text / edit input */}
+            <input
+              type="text"
+              className={`todo-text${todo.completed ? ' text-done' : ''}${isTodoEditable ? ' text-editing' : ''}`}
+              value={todoMsg}
+              readOnly={!isTodoEditable}
+              onChange={e => setTodoMsg(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && isTodoEditable && editTodo()}
+              aria-label="todo text"
+            />
+
+            {/* Meta chips */}
+            <div className="todo-meta">
+              <span
+                className="meta-chip"
+                style={{
+                  color:       catStyle.color,
+                  borderColor: `${catStyle.color}44`,
+                  background:  `${catStyle.color}14`,
+                }}
+              >
+                {catStyle.label}
+              </span>
+
+              <span className="meta-pri" style={{ color: priStyle.color }}>
+                {priStyle.symbol} {priStyle.label}
+              </span>
+
+              {dueFmt && (
+                <span className={`meta-date${isOver ? ' date-overdue' : isToday ? ' date-today' : ''}`}>
+                  ⊙ {dueFmt}{isToday && ' · today'}{isOver && ' · overdue'}
+                </span>
+              )}
+
+              {subtasks.length > 0 && (
+                <button
+                  className="meta-subtask-btn"
+                  onClick={() => setShowSubtasks(p => !p)}
+                  aria-expanded={showSubtasks}
                 >
-                    {isTodoEditable ? "💾" : "🖊️"}
-                </motion.button>
-                <motion.button
-                    whileHover={{ scale: 1.1, backgroundColor: "rgba(224, 50, 50, 0.2)", borderColor: "rgba(224, 50, 50, 0.5)" }}
-                    whileTap={{ scale: 0.9 }}
-                    className="w-10 h-10 rounded-xl flex justify-center items-center bg-[#EEEEEE]/10 border border-[#EEEEEE]/10 backdrop-blur-md transition-colors"
-                    onClick={() => deleteTodo(todo.id)}
-                >
-                    <span className="text-[#EEEEEE]">✕</span>
-                </motion.button>
+                  ◫ {doneSubtasks}/{subtasks.length}
+                </button>
+              )}
             </div>
-        </motion.div>
-    );
+
+          </div>
+
+          {/* Action buttons */}
+          <div className="todo-actions" role="group" aria-label="task actions">
+
+            <motion.button
+              type="button"
+              className="action-btn"
+              onClick={() => setShowSubtasks(p => !p)}
+              whileTap={{ scale: 0.85 }}
+              aria-label="toggle subtasks"
+              title="Subtasks"
+            >
+              ◱
+            </motion.button>
+
+            <motion.button
+              type="button"
+              className="action-btn"
+              onClick={() => {
+                if (todo.completed) return;
+                if (isTodoEditable) editTodo();
+                else setIsTodoEditable(true);
+              }}
+              disabled={todo.completed}
+              whileTap={{ scale: 0.85 }}
+              aria-label={isTodoEditable ? 'save edit' : 'edit todo'}
+              title={isTodoEditable ? 'Save' : 'Edit'}
+            >
+              {isTodoEditable ? '✓' : '✎'}
+            </motion.button>
+
+            <motion.button
+              type="button"
+              className="action-btn action-delete"
+              onClick={() => deleteTodo(todo.id)}
+              whileTap={{ scale: 0.85 }}
+              aria-label="delete todo"
+              title="Delete"
+            >
+              ×
+            </motion.button>
+          </div>
+
+        </div>
+
+        {/* ── Subtasks panel ── */}
+        <AnimatePresence>
+          {showSubtasks && (
+            <motion.div
+              className="subtasks-panel"
+              variants={subVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+
+              {/* Existing subtasks */}
+              <div className="subtasks-list">
+                <AnimatePresence mode="popLayout">
+                  {subtasks.map(sub => (
+                    <motion.div
+                      key={sub.id}
+                      className={`subtask-item${sub.completed ? ' subtask-done' : ''}`}
+                      variants={subItemVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      layout
+                    >
+                      <button
+                        type="button"
+                        className={`subtask-check${sub.completed ? ' sub-checked' : ''}`}
+                        onClick={() => toggleSubtask(todo.id, sub.id)}
+                        aria-label={sub.completed ? 'uncheck subtask' : 'check subtask'}
+                      />
+                      <span className="subtask-text">{sub.text}</span>
+                      <button
+                        type="button"
+                        className="subtask-del"
+                        onClick={() => deleteSubtask(todo.id, sub.id)}
+                        aria-label="delete subtask"
+                      >
+                        ×
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Add subtask form */}
+              <form className="subtask-form" onSubmit={handleAddSubtask}>
+                <input
+                  type="text"
+                  className="subtask-input"
+                  placeholder="add subtask..."
+                  value={newSubtask}
+                  onChange={e => setNewSubtask(e.target.value)}
+                  aria-label="new subtask"
+                />
+                <button
+                  type="submit"
+                  className="subtask-add-btn"
+                  aria-label="add subtask"
+                >
+                  +
+                </button>
+              </form>
+
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
+    </div>
+  );
 }
 
 export default TodoItem;
