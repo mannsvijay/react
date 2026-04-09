@@ -7,12 +7,14 @@ function AddTodo() {
     const [input, setInput] = useState('')
     const dispatch = useDispatch()
 
+    // console.log(input)
     const addTodoHandler = (e) => {
         e.preventDefault()
         dispatch(addTodo(input))
         setInput('')
     }
 
+    // console.log(input)
   return (
     <form onSubmit={addTodoHandler} className="space-x-3 mt-12">
       <input
@@ -30,6 +32,7 @@ function AddTodo() {
       </button>
     </form>
   )
+
 }
 
 export default AddTodo
